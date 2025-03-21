@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn">
+                    <span><i class="fas fa-plus"></i> New chat</span>
+                </button>
+            </div>
+            <div class="sidebar-history">
+                <!-- Chat history will be populated here -->
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-name">User</div>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <h1>RAG Assistant</h1>
+                    <p>Ask questions about your documents</p>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Chat messages will appear here -->
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <form id="question-form">
+                    <div class="input-box">
+                        <textarea 
+                            id="question-input" 
+                            placeholder="Ask a question..." 
+                            rows="1"
+                            autofocus
+                        ></textarea>
+                        <button type="submit" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+                <div class="input-footer">
+                    <p>Powered by LangChain + RAG</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 

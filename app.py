@@ -3,6 +3,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from langserve import add_routes
 
 from src.base.llm_model import get_llm
@@ -30,7 +32,14 @@ app.add_middleware(
         expose_headers=["*"],
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 #------------------------ROUTES - FAST-API---------------------
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/static/index.html")
+
 @app.get("/check")
 async def check():
         return {"status":"ok"}
