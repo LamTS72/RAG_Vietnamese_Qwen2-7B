@@ -37,7 +37,7 @@ class VectorDB:
             self.embeddings = SentenceTransformerEmbeddings(model_name=embedding_model)
         
         self.db = self.build_db(documents)
-        self.bm25_retriever, self.tf_idf_retriever = self.build_retrievers(documents)
+        self.bm25_retriever = self.build_retrievers(documents)
         self.ranker_model = AutoModelForSequenceClassification.from_pretrained(model_rank)
         self.ranker_tokenizer = AutoTokenizer.from_pretrained(model_rank)        
 
@@ -49,29 +49,48 @@ class VectorDB:
         )
         return db
 
-    def build_retrievers(self, documents, top_k=2):
+    def build_retrievers(self, documents, top_k=5):
         bm25 = BM25Retriever.from_documents(documents, k=top_k)
-        tf_idf = TFIDFRetriever.from_documents(documents, k=top_k)
-        return bm25, tf_idf
+        return bm25
 
-    def ranker_docs(self, query, docs, top_k=3):
-        pairs = [query + " [SEP] " + doc.page_content for doc in docs]
-        inputs = self.ranker_tokenizer(pairs, padding=True, truncation=True, return_tensors="pt")
+    def ranker_docs(self, query, docs, top_k=5, MAX_LENGTH=256):
+        # Create query-document pairs
+        tokenized_pairs = [self.ranker_tokenizer(query, 
+                                                 doc.page_content, 
+                                                 padding=True, 
+                                                 truncation="longest_first", 
+                                                 return_tensors="pt", 
+                                                 max_length=MAX_LENGTH) 
+                            for doc in docs]
+
+        # Ensure model is in evaluation mode
+        self.ranker_model.eval()
+
+        # Run inference
+        scores = []
         with torch.no_grad():
-            logits = self.ranker_model(**inputs).logits
-            # Handle different model output shapes
-            if logits.shape[1] > 1:  # Multi-class (has at least 2 classes)
-                scores = logits[:, 1].tolist()  # Get positive class scores (index 1)
-            else:  # Single output - treat as raw score
-                scores = logits[:, 0].tolist()  # Get the only available score
-        ranked_docs = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
-        return [doc for doc, score in ranked_docs[:top_k]]
+            for features in tokenized_pairs:
+                model_predictions = self.ranker_model(**features, return_dict=True)
+                logits = model_predictions.logits
+                probs = torch.sigmoid(logits)  # Apply sigmoid activation
+                scores.append(probs[0][0].item())  # Extract score
+                
+        # Pair documents with their scores
+        doc_score_pairs = list(zip(docs, scores))
+
+        # Sort by score in descending order (highest score first)
+        sorted_doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
+
+        # Get top-k (you can change this)
+        top_docs = sorted_doc_score_pairs[:top_k]
+        return [doc for i, (doc, score) in enumerate(top_docs)]
+
     
-    def get_retriever(self, search_type="similarity", search_kwargs:dict = {"k": 2}):
+    def get_retriever(self, search_type="similarity", search_kwargs:dict = {"k": 5}):
         retriever_base = self.db.as_retriever(
             search_type=search_type, 
             search_kwargs=search_kwargs
         )
-        ensemble_retriever = EnsembleRetriever(retrievers=[retriever_base, self.bm25_retriever, self.tf_idf_retriever])
+        ensemble_retriever = EnsembleRetriever(retrievers=[retriever_base, self.bm25_retriever])
         return ensemble_retriever
 

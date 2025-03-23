@@ -4,16 +4,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import glob
 from tqdm import tqdm
 import multiprocessing
+from langchain.schema import Document
+import pdfplumber
 
-
-def remove_non_uft8_char(text):
-    return "".join(char for char in text if ord(char) < 128)
-    
-def load_pdf(pdf_file):
-    docs = PyPDFLoader(pdf_file, extract_images=True).load()
-    for doc in docs:
-            doc.page_content = remove_non_uft8_char(doc.page_content)
-    return docs
+def extract_text_as_documents(pdf_path):
+    documents = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for i, page in enumerate(pdf.pages):
+            text = page.extract_text()
+            if text:  # Avoid adding empty pages
+                doc = Document(page_content=text, metadata={"source": pdf_path, "page": i + 1})
+                documents.append(doc)
+    return documents
 
 
 def get_num_cpu():
@@ -39,7 +41,7 @@ class PDFLoader(BaseLoader):
             doc_loader = []
             total_files = len(pdf_files)
             with tqdm(total=total_files, desc="Loading PDFs", unit="file") as pb:
-                for result in pool.imap_unordered(load_pdf, pdf_files):
+                for result in pool.imap_unordered(extract_text_as_documents, pdf_files):
                     doc_loader.extend(result)
                     pb.update(1)
         return doc_loader

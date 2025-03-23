@@ -10,6 +10,10 @@ A ChatGPT-like interface for document retrieval-augmented generation (RAG) using
 - Multiple retrieval methods (Vector DB, BM25, TF-IDF)
 - Document reranking for improved accuracy
 
+## Demo
+
+![RAG Document Assistant Demo](imgs/image.png)
+
 ## Getting Started
 
 ### Requirements
@@ -44,7 +48,7 @@ The application exposes the following endpoints:
 
 - **Backend**: FastAPI, LangChain
 - **Frontend**: HTML, CSS, JavaScript
-- **Embedding Models**: HuggingFace, custom models
+- **Embedding Models**: HuggingFace, HaLong Embedding
 - **Vector Databases**: FAISS, Chroma
 - **Additional Retrievers**: BM25, TF-IDF
 - **Document Reranking**: PhoRanker, custom models

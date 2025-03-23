@@ -53,9 +53,9 @@ class RagLLM():
         """
         def retrieve_and_rank(question):
             # First retrieve documents with the base retriever
-            docs = retriever.get_relevant_documents(question)
+            docs = retriever.invoke(question)
             print(docs)
-            # Apply reranking if a ranker is provided
+            # Apply ranker if a ranker is provided
             if ranker is not None:
                 docs = ranker.ranker_docs(query=question, docs=docs, top_k=top_k)
             return docs
