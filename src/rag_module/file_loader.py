@@ -1,10 +1,10 @@
 from typing import Any, Union, List, Literal
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 import glob
 from tqdm import tqdm
 import multiprocessing
-from langchain.schema import Document
+from langchain_core.documents import Document
 import pdfplumber
 
 def extract_text_as_documents(pdf_path):
@@ -27,10 +27,10 @@ class BaseLoader():
     """
     def __init__(self):
         self.num_processors = get_num_cpu()
-    
+
     def __call__(self, files: List[str], **kwargs) -> Any:
         pass
-    
+
 class PDFLoader(BaseLoader):
     def __init__(self):
         super().__init__()
@@ -45,7 +45,7 @@ class PDFLoader(BaseLoader):
                     doc_loader.extend(result)
                     pb.update(1)
         return doc_loader
-    
+
 
 class TextSplitter():
     def __init__(self, separators: List[str] = ["\n\n", "\n", " ", ""], chunk_size=300, chunk_overlap=50):
@@ -57,7 +57,7 @@ class TextSplitter():
 
     def __call__(self, documents) -> Any:
         return self.splitter.split_documents(documents)
-        
+
 class Loader():
     def __init__(self, file_type: str = Literal["pdf"], split_kwargs: dict={"chunk_size":300, "chunk_overlap":0}):
         assert file_type in ["pdf"], "file_type must be pdf"
@@ -75,7 +75,7 @@ class Loader():
         doc_loaded = self.doc_loader(pdf_files, workers=workers)
         doc_split = self.doc_splitter(doc_loaded)
         return doc_split
-    
+
     def load_dir(self, dir_path, workers=1):
         """
         Load pdf files from a directory

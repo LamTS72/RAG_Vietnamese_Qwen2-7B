@@ -58,6 +58,16 @@ class RagLLM():
             # Apply ranker if a ranker is provided
             if ranker is not None:
                 docs = ranker.ranker_docs(query=question, docs=docs, top_k=top_k)
+                
+            # Add trace for LangSmith to track document metadata
+            doc_metadata = [
+                {
+                    "source": doc.metadata.get("source", "unknown"),
+                    "page": doc.metadata.get("page", 0),
+                    "score": getattr(doc, "score", None)
+                } 
+                for doc in docs
+            ]
             return docs
         
         input_data = {
