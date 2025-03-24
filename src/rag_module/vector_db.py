@@ -1,15 +1,11 @@
 from typing import Union, List
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_core.embeddings import Embeddings
-
-
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-
 from langchain_community.vectorstores import FAISS
 from langchain.retrievers import   EnsembleRetriever
-
 from langchain_community.retrievers import BM25Retriever
-
 from langchain_community.retrievers import TFIDFRetriever
 from sentence_transformers import SentenceTransformer
 from torch import embedding
@@ -36,7 +32,11 @@ class SentenceTransformerEmbeddings(Embeddings):
 
 
 class VectorDB:
-    def __init__(self, documents=None, vector_db: Union[Chroma, FAISS]=Chroma, embeddings="hf", embedding_model="hiieu/halong_embedding", model_rank="itdainb/PhoRanker"):
+    def __init__(self, documents=None, 
+                 vector_db: Union[Chroma, FAISS]=Chroma, 
+                 embeddings="hf", 
+                 embedding_model="hiieu/halong_embedding", 
+                 model_rank="itdainb/PhoRanker"):
         self.vector_db = vector_db
         if embeddings == "hf":
             self.embeddings = HuggingFaceEmbeddings()
