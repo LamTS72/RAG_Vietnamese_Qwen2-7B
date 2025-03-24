@@ -25,4 +25,3 @@ langserve
 rapidocr-onnxruntime
 sse_starlette 
 python-multipart
-py_vncorenlp
