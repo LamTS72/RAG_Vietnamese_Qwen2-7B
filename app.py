@@ -4,8 +4,9 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from langserve import add_routes
+import json
 
 from src.base.llm_model import get_llm
 from src.rag_module.build_rag import build_rag_chain, InputQA, OutputQA
@@ -44,10 +45,20 @@ async def root():
 async def check():
         return {"status":"ok"}
 
-@app.post("/generative_ai", response_model=OutputQA)
+@app.post("/generative_ai")
 async def generative_ai(inputs: InputQA):
-        answer = genAI_chain.invoke(inputs.question)
-        return {"answer": answer}
+    async def event_generator():
+        try:
+            async for chunk in genAI_chain.astream(inputs.question):
+                if chunk:
+                    yield f"data: {json.dumps({'answer': chunk})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream"
+    )
 
 
 #--------LANGSERVE ROUTES - PLAYGROUND-------------

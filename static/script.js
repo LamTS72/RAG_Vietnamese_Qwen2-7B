@@ -35,26 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.style.display = 'block';
         }
         
-        // Add loading indicator
-        const loadingMsgId = addLoadingMessage();
-        
         try {
             // Call API to get response
             const response = await fetchAnswer(question);
-            
-            // Remove loading indicator
-            removeLoadingMessage(loadingMsgId);
-            
-            // Add assistant message to UI
-            addMessageToUI('assistant', response.answer);
             
             // Update chat history
             updateChatHistory(question, response.answer);
             
         } catch (error) {
-            // Remove loading indicator
-            removeLoadingMessage(loadingMsgId);
-            
             // Add error message
             addMessageToUI('assistant', 'Sorry, I encountered an error processing your request. Please try again.');
             console.error('Error:', error);
@@ -79,8 +67,53 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) {
             throw new Error(`API responded with status: ${response.status}`);
         }
-        
-        return response.json();
+
+        // Create a new message div for the assistant's response
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content"></div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        const messageContent = messageDiv.querySelector('.message-content');
+
+        // Read the response as a stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedAnswer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+                        if (data.error) {
+                            messageContent.innerHTML = `Error: ${data.error}`;
+                            break;
+                        }
+                        if (data.answer) {
+                            accumulatedAnswer += data.answer;
+                            messageContent.innerHTML = formatMessage(accumulatedAnswer);
+                            // Scroll to bottom
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing SSE data:', e);
+                    }
+                }
+            }
+        }
+
+        return { answer: accumulatedAnswer };
     }
     
     // Function to add message to UI
@@ -102,40 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    // Function to add loading indicator
-    function addLoadingMessage() {
-        const loadingId = generateId();
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message assistant-message';
-        loadingDiv.id = loadingId;
-        
-        loadingDiv.innerHTML = `
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        `;
-        
-        chatMessages.appendChild(loadingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        return loadingId;
-    }
-    
-    // Function to remove loading indicator
-    function removeLoadingMessage(id) {
-        const loadingElement = document.getElementById(id);
-        if (loadingElement) {
-            loadingElement.remove();
-        }
     }
     
     // Function to update chat history

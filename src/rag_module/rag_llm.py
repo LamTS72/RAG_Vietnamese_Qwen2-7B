@@ -75,8 +75,10 @@ class RagLLM():
             "question": RunnablePassthrough()
         }
 
+        # Create a streaming chain
+        # Ensure no stopping tokens
         rag_chain = (
-            input_data | self.prompt | self.llm | self.str_parser
+            input_data | self.prompt | self.llm.bind(stop=None)   | self.str_parser
         )
         return rag_chain
     
